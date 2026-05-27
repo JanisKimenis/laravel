@@ -21,7 +21,7 @@ class LargeBookSeeder extends Seeder
         $books = [];
         for ($i = $start; $i <= $start + $total - 1; $i++) {
             $books[] = [
-                'title' => $faker->sentence(3) . ' Booket',
+                'title' => 'Booket ' . $faker->sentence(3),
                 'isbn' => '978-' . str_pad((string) $i, 12, '0', STR_PAD_LEFT),
                 'available_copies' => $faker->numberBetween(0, 10),
                 'created_at' => $now,

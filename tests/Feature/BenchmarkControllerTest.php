@@ -19,13 +19,14 @@ class BenchmarkControllerTest extends TestCase
 
     public function test_benchmark_run_works(): void
     {
-        Book::factory()->create(['title' => 'Testa Booket']);
-        Book::factory()->create(['title' => 'Vēl viena Booket']);
+        Book::factory()->create(['title' => 'Booket Benchmark XYZ']);
+        Book::factory()->create(['title' => 'Booket Vēl viena grāmata']);
 
         $this->post(route('benchmark.run'))
             ->assertOk()
             ->assertSee('Bez indeksa')
             ->assertSee('Ar indeksu')
-            ->assertSee('EXPLAIN QUERY PLAN');
+            ->assertSee('EXPLAIN QUERY PLAN')
+            ->assertSee('books_title_index');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Book;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -11,36 +12,52 @@ class BenchmarkController extends Controller
     {
         $withoutIndex = null;
         $withIndex = null;
-        $explain = null;
+        $explainBefore = null;
+        $explainAfter = null;
+        $usesIndex = false;
+        $totalBooks = null;
+        $sampleTitle = null;
 
-        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explain'));
+        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'totalBooks', 'sampleTitle'));
     }
 
     public function run(): View
     {
-        $query = 'SELECT * FROM books WHERE title LIKE ?';
+        $totalBooks = Book::count();
+        $sample = Book::where('title', 'LIKE', 'Booket%')->first();
+        $pattern = $sample ? $sample->title : 'Booket Benchmark';
 
-        // === Search WITHOUT index ===
-        $start = microtime(true);
-        DB::select($query, ['%et%']);
-        $withoutIndex = round((microtime(true) - $start) * 1000, 2);
-
-        // Get EXPLAIN QUERY PLAN before index
+        // Drop index for "without" test
         try {
             DB::statement('DROP INDEX IF EXISTS books_title_index');
         } catch (\Exception $e) {
         }
 
-        // === Create index and re-test ===
+        $query = 'SELECT * FROM books WHERE title = ?';
+
+        $start = microtime(true);
+        DB::select($query, [$pattern]);
+        $withoutIndex = round((microtime(true) - $start) * 1000, 2);
+
+        $explainBefore = DB::select('EXPLAIN QUERY PLAN ' . $query, [$pattern]);
+
+        // Create index and retest
         DB::statement('CREATE INDEX IF NOT EXISTS books_title_index ON books(title)');
 
         $start = microtime(true);
-        DB::select($query, ['%et%']);
+        DB::select($query, [$pattern]);
         $withIndex = round((microtime(true) - $start) * 1000, 2);
 
-        // EXPLAIN QUERY PLAN
-        $explain = DB::select('EXPLAIN QUERY PLAN ' . $query, ['%et%']);
+        $explainAfter = DB::select('EXPLAIN QUERY PLAN ' . $query, [$pattern]);
 
-        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explain'));
+        $usesIndex = false;
+        foreach ($explainAfter as $row) {
+            if (str_contains($row->detail, 'books_title_index')) {
+                $usesIndex = true;
+                break;
+            }
+        }
+
+        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'totalBooks', 'pattern'));
     }
 }
