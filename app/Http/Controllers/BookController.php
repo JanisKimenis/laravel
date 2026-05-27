@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\Journal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -56,5 +57,12 @@ class BookController extends Controller
         $book->delete();
 
         return redirect()->route('books.index')->with('success', 'Grāmata dzēsta!');
+    }
+
+    public function journal(): View
+    {
+        $entries = Journal::with('book')->latest('created_at')->paginate(20);
+
+        return view('books.journal', compact('entries'));
     }
 }

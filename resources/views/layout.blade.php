@@ -13,6 +13,8 @@
             <a href="{{ route('books.index') }}" class="hover:underline">Grāmatas</a>
             <a href="{{ route('readers.index') }}" class="hover:underline">Lasītāji</a>
             <a href="{{ route('loans.index') }}" class="hover:underline">Aizņēmumi</a>
+            <a href="{{ route('loans.overdue') }}" class="hover:underline">Kavētie</a>
+            <a href="{{ route('books.journal') }}" class="hover:underline">Žurnāls</a>
         </div>
     </nav>
 

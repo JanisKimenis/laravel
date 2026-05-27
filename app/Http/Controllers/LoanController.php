@@ -81,4 +81,11 @@ class LoanController extends Controller
 
         return redirect()->route('loans.index')->with('success', 'Grāmata atgriezta!');
     }
+
+    public function overdue(): View
+    {
+        $loans = DB::table('overdue_loans')->get();
+
+        return view('loans.overdue', compact('loans'));
+    }
 }
