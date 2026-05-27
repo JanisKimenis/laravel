@@ -14,14 +14,15 @@
     </form>
 @else
     <p class="mb-4 text-gray-600">
-        Testa vaicājums: <code class="bg-gray-200 px-2 py-1 rounded">SELECT * FROM books WHERE title = '{{ $pattern }}'</code>
-        <br><span class="text-sm">(precīza meklēšana — lai demonstrētu indeksa darbību)</span>
+        Testa vaicājums: <code class="bg-gray-200 px-2 py-1 rounded">SELECT * FROM books WHERE title >= 'Booket' AND title &lt; 'Bookf'</code>
+        <br><span class="text-sm">(meklē visas grāmatas, kas sākas ar "Booket" — atrastas <strong>{{ number_format($matchCount) }}</strong> rindas)</span>
     </p>
 
     <div class="grid grid-cols-2 gap-4 mb-6">
         <div class="bg-white rounded shadow p-4">
             <h2 class="text-lg font-semibold mb-2">Bez indeksa</h2>
             <p class="text-3xl font-bold text-gray-600">{{ $withoutIndex }} <span class="text-base font-normal">ms</span></p>
+            <p class="text-xs text-gray-400">pilns tabulas skenējums</p>
         </div>
         <div class="bg-white rounded shadow p-4">
             <h2 class="text-lg font-semibold mb-2">Ar indeksu</h2>

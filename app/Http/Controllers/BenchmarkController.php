@@ -15,17 +15,14 @@ class BenchmarkController extends Controller
         $explainBefore = null;
         $explainAfter = null;
         $usesIndex = false;
-        $totalBooks = null;
-        $sampleTitle = null;
+        $matchCount = null;
 
-        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'totalBooks', 'sampleTitle'));
+        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'matchCount'));
     }
 
     public function run(): View
     {
-        $totalBooks = Book::count();
-        $sample = Book::where('title', 'LIKE', 'Booket%')->first();
-        $pattern = $sample ? $sample->title : 'Booket Benchmark';
+        $matchCount = Book::where('title', 'LIKE', 'Booket%')->count();
 
         // Drop index for "without" test
         try {
@@ -33,22 +30,22 @@ class BenchmarkController extends Controller
         } catch (\Exception $e) {
         }
 
-        $query = 'SELECT * FROM books WHERE title = ?';
+        $query = "SELECT * FROM books WHERE title >= 'Booket' AND title < 'Bookf'";
 
         $start = microtime(true);
-        DB::select($query, [$pattern]);
+        DB::select($query);
         $withoutIndex = round((microtime(true) - $start) * 1000, 2);
 
-        $explainBefore = DB::select('EXPLAIN QUERY PLAN ' . $query, [$pattern]);
+        $explainBefore = DB::select('EXPLAIN QUERY PLAN ' . $query);
 
         // Create index and retest
         DB::statement('CREATE INDEX IF NOT EXISTS books_title_index ON books(title)');
 
         $start = microtime(true);
-        DB::select($query, [$pattern]);
+        DB::select($query);
         $withIndex = round((microtime(true) - $start) * 1000, 2);
 
-        $explainAfter = DB::select('EXPLAIN QUERY PLAN ' . $query, [$pattern]);
+        $explainAfter = DB::select('EXPLAIN QUERY PLAN ' . $query);
 
         $usesIndex = false;
         foreach ($explainAfter as $row) {
@@ -58,6 +55,6 @@ class BenchmarkController extends Controller
             }
         }
 
-        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'totalBooks', 'pattern'));
+        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'matchCount'));
     }
 }

@@ -21,6 +21,7 @@ class BenchmarkControllerTest extends TestCase
     {
         Book::factory()->create(['title' => 'Booket Benchmark XYZ']);
         Book::factory()->create(['title' => 'Booket Vēl viena grāmata']);
+        Book::factory()->create(['title' => 'Cita grāmata']);
 
         $this->post(route('benchmark.run'))
             ->assertOk()
