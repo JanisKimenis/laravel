@@ -6,6 +6,7 @@ use App\Models\Book;
 use App\Models\Loan;
 use App\Models\Reader;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class LoanControllerTest extends TestCase
@@ -74,5 +75,37 @@ class LoanControllerTest extends TestCase
 
         $this->assertEquals(1, Loan::count());
         $this->assertEquals(0, $book->fresh()->available_copies);
+    }
+
+    public function test_cannot_return_book_twice(): void
+    {
+        $book = Book::factory()->create(['available_copies' => 0]);
+        $loan = Loan::factory()->create([
+            'book_id' => $book->id,
+            'borrowed_at' => now()->subDays(5),
+            'returned_at' => now(),
+        ]);
+
+        $this->patch(route('loans.return', $loan))
+            ->assertRedirect(route('loans.index'))
+            ->assertSessionHas('error', 'Grāmata jau atgriezta!');
+
+        $this->assertEquals(0, $book->fresh()->available_copies);
+    }
+
+    public function test_overdue_page_displays_overdue_loans(): void
+    {
+        $book = Book::factory()->create(['available_copies' => 1]);
+        $reader = Reader::factory()->create();
+        Loan::factory()->create([
+            'book_id' => $book->id,
+            'reader_id' => $reader->id,
+            'borrowed_at' => now()->subDays(30),
+            'returned_at' => null,
+        ]);
+
+        $this->get(route('loans.overdue'))
+            ->assertOk()
+            ->assertSee('Kavētie aizņēmumi');
     }
 }

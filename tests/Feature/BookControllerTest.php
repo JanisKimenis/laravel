@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Book;
+use App\Models\Journal;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -54,5 +55,30 @@ class BookControllerTest extends TestCase
             ->assertRedirect(route('books.index'));
 
         $this->assertDatabaseMissing('books', ['id' => $book->id]);
+    }
+
+    public function test_journal_page_displays_entries(): void
+    {
+        $book = Book::factory()->create(['available_copies' => 5]);
+
+        $book->decrement('available_copies');
+
+        $this->get(route('books.journal'))
+            ->assertOk()
+            ->assertSee('Žurnāls')
+            ->assertSee($book->title);
+    }
+
+    public function test_book_update_creates_journal_entry(): void
+    {
+        $book = Book::factory()->create(['available_copies' => 5]);
+
+        $book->decrement('available_copies');
+
+        $this->assertDatabaseHas('journals', [
+            'book_id' => $book->id,
+            'old_copies' => 5,
+            'new_copies' => 4,
+        ]);
     }
 }
