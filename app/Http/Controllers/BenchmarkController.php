@@ -23,7 +23,7 @@ class BenchmarkController extends Controller
     public function run(): View
     {
         $driver = DB::connection()->getDriverName();
-        $sampleTitle = Book::where('title', 'LIKE', 'Booket%')->first()->title;
+        $sampleTitle = Book::first()->title;
 
         try {
             DB::statement('DROP INDEX IF EXISTS books_title_index');
