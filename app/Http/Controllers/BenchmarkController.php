@@ -10,23 +10,21 @@ class BenchmarkController extends Controller
 {
     public function index(): View
     {
-        $withoutIndex = null;
-        $withIndex = null;
-        $explainBefore = null;
-        $explainAfter = null;
-        $usesIndex = false;
-        $totalBooks = null;
-        $sampleTitle = null;
-
-        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'totalBooks', 'sampleTitle'));
+        return view('benchmark.index', [
+            'withoutIndex' => null,
+            'withIndex' => null,
+            'explainBefore' => null,
+            'explainAfter' => null,
+            'usesIndex' => false,
+            'sampleTitle' => null,
+        ]);
     }
 
     public function run(): View
     {
-        $totalBooks = Book::count();
+        $driver = DB::connection()->getDriverName();
         $sampleTitle = Book::where('title', 'LIKE', 'Booket%')->first()->title;
 
-        // Drop index for "without" test
         try {
             DB::statement('DROP INDEX IF EXISTS books_title_index');
         } catch (\Exception $e) {
@@ -37,7 +35,7 @@ class BenchmarkController extends Controller
         DB::select('SELECT * FROM books WHERE title = ?', [$sampleTitle]);
         $withoutIndex = round((microtime(true) - $start) * 1000, 2);
 
-        $explainBefore = DB::select('EXPLAIN QUERY PLAN SELECT * FROM books WHERE title = ?', [$sampleTitle]);
+        $explainBefore = $this->runExplain($sampleTitle);
 
         // === WITH index ===
         DB::statement('CREATE INDEX IF NOT EXISTS books_title_index ON books(title)');
@@ -46,16 +44,28 @@ class BenchmarkController extends Controller
         DB::select('SELECT * FROM books WHERE title = ?', [$sampleTitle]);
         $withIndex = round((microtime(true) - $start) * 1000, 2);
 
-        $explainAfter = DB::select('EXPLAIN QUERY PLAN SELECT * FROM books WHERE title = ?', [$sampleTitle]);
+        $explainAfter = $this->runExplain($sampleTitle);
 
         $usesIndex = false;
         foreach ($explainAfter as $row) {
-            if (str_contains($row->detail, 'books_title_index')) {
-                $usesIndex = true;
-                break;
+            foreach ((array) $row as $col) {
+                if (str_contains((string) $col, 'books_title_index') || str_contains((string) $col, 'Index Scan')) {
+                    $usesIndex = true;
+                    break 2;
+                }
             }
         }
 
-        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'totalBooks', 'sampleTitle'));
+        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'sampleTitle'));
+    }
+
+    private function runExplain(string $title): array
+    {
+        $driver = DB::connection()->getDriverName();
+        $rows = $driver === 'sqlite'
+            ? DB::select('EXPLAIN QUERY PLAN SELECT * FROM books WHERE title = ?', [$title])
+            : DB::select('EXPLAIN (FORMAT TEXT) SELECT * FROM books WHERE title = ?', [$title]);
+
+        return array_map(fn ($r) => (object) ['detail' => join(' ', array_values((array) $r))], $rows);
     }
 }

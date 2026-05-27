@@ -42,7 +42,7 @@
         </div>
     </div>
 
-    <h2 class="text-lg font-semibold mb-2">EXPLAIN QUERY PLAN — bez indeksa</h2>
+    <h2 class="text-lg font-semibold mb-2">EXPLAIN — bez indeksa</h2>
     <table class="w-full bg-white rounded shadow mb-4">
         <thead class="bg-gray-200"><tr><th class="p-2 text-left">Detāļas</th></tr></thead>
         <tbody>
@@ -52,7 +52,7 @@
         </tbody>
     </table>
 
-    <h2 class="text-lg font-semibold mb-2">EXPLAIN QUERY PLAN — ar indeksu</h2>
+    <h2 class="text-lg font-semibold mb-2">EXPLAIN — ar indeksu</h2>
     <table class="w-full bg-white rounded shadow mb-4">
         <thead class="bg-gray-200"><tr><th class="p-2 text-left">Detāļas</th></tr></thead>
         <tbody>

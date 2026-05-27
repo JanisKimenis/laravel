@@ -27,7 +27,7 @@ class BenchmarkControllerTest extends TestCase
             ->assertOk()
             ->assertSee('Bez indeksa')
             ->assertSee('Ar indeksu')
-            ->assertSee('EXPLAIN QUERY PLAN')
+            ->assertSee('EXPLAIN')
             ->assertSee('books_title_index');
     }
 }

@@ -7,23 +7,45 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement('
-            CREATE VIEW IF NOT EXISTS overdue_loans AS
-            SELECT
-                loans.id AS loan_id,
-                books.title AS book_title,
-                readers.name AS reader_name,
-                readers.email AS reader_email,
-                loans.borrowed_at,
-                loans.returned_at,
-                (julianday(\'now\') - julianday(loans.borrowed_at)) AS days_overdue
-            FROM loans
-            JOIN books ON loans.book_id = books.id
-            JOIN readers ON loans.reader_id = readers.id
-            WHERE loans.returned_at IS NULL
-              AND loans.borrowed_at < datetime(\'now\', \'-14 days\')
-            ORDER BY loans.borrowed_at ASC
-        ');
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            DB::statement('
+                CREATE VIEW IF NOT EXISTS overdue_loans AS
+                SELECT
+                    loans.id AS loan_id,
+                    books.title AS book_title,
+                    readers.name AS reader_name,
+                    readers.email AS reader_email,
+                    loans.borrowed_at,
+                    loans.returned_at,
+                    (julianday(\'now\') - julianday(loans.borrowed_at)) AS days_overdue
+                FROM loans
+                JOIN books ON loans.book_id = books.id
+                JOIN readers ON loans.reader_id = readers.id
+                WHERE loans.returned_at IS NULL
+                  AND loans.borrowed_at < datetime(\'now\', \'-14 days\')
+                ORDER BY loans.borrowed_at ASC
+            ');
+        } elseif ($driver === 'pgsql') {
+            DB::statement("
+                CREATE OR REPLACE VIEW overdue_loans AS
+                SELECT
+                    loans.id AS loan_id,
+                    books.title AS book_title,
+                    readers.name AS reader_name,
+                    readers.email AS reader_email,
+                    loans.borrowed_at,
+                    loans.returned_at,
+                    EXTRACT(DAY FROM NOW() - loans.borrowed_at) AS days_overdue
+                FROM loans
+                JOIN books ON loans.book_id = books.id
+                JOIN readers ON loans.reader_id = readers.id
+                WHERE loans.returned_at IS NULL
+                  AND loans.borrowed_at < NOW() - INTERVAL '14 days'
+                ORDER BY loans.borrowed_at ASC
+            ");
+        }
     }
 
     public function down(): void
