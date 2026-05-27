@@ -13,6 +13,16 @@ class LoanControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        DB::table('settings')->updateOrInsert(
+            ['key' => 'fine_per_day'],
+            ['value' => '0.50', 'created_at' => now(), 'updated_at' => now()]
+        );
+    }
+
     public function test_can_borrow_available_book(): void
     {
         $book = Book::factory()->create(['available_copies' => 2]);

@@ -2,54 +2,39 @@
 
 namespace Tests\Feature;
 
-use App\Models\Book;
-use App\Models\Loan;
-use App\Models\Reader;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class FineControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_fine_index_displays_form(): void
+    protected function setUp(): void
     {
-        Reader::factory()->create(['name' => 'Testa Lasītājs']);
+        parent::setUp();
 
+        DB::table('settings')->updateOrInsert(
+            ['key' => 'fine_per_day'],
+            ['value' => '0.50', 'created_at' => now(), 'updated_at' => now()]
+        );
+    }
+
+    public function test_fine_index_displays_current_rate(): void
+    {
         $this->get(route('fines.index'))
             ->assertOk()
-            ->assertSee('Soda aprēķins')
-            ->assertSee('Testa Lasītājs');
+            ->assertSee('Soda likme')
+            ->assertSee('0.50');
     }
 
-    public function test_fine_calculates_correct_amount(): void
+    public function test_fine_update_changes_rate(): void
     {
-        $reader = Reader::factory()->create();
-        $book = Book::factory()->create(['available_copies' => 1]);
+        $this->post(route('fines.update'), ['rate' => 1.00])
+            ->assertRedirect(route('fines.index'))
+            ->assertSessionHas('success');
 
-        $loan = Loan::factory()->create([
-            'reader_id' => $reader->id,
-            'book_id' => $book->id,
-            'borrowed_at' => now()->subDays(30),
-            'returned_at' => null,
-        ]);
-
-        $this->get(route('fines.calculate', [
-            'reader_id' => $reader->id,
-            'rate' => 0.50,
-        ]))->assertOk()
-            ->assertSee('0.50 EUR/dienā')
-            ->assertSee('EUR');
-    }
-
-    public function test_fine_returns_zero_for_no_overdue_loans(): void
-    {
-        $reader = Reader::factory()->create();
-
-        $this->get(route('fines.calculate', [
-            'reader_id' => $reader->id,
-            'rate' => 0.50,
-        ]))->assertOk()
-            ->assertSee('0.00 EUR');
+        $rate = DB::table('settings')->where('key', 'fine_per_day')->value('value');
+        $this->assertEquals('1.00', $rate);
     }
 }

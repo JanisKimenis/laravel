@@ -18,6 +18,8 @@
         <br>Tiek meklēta grāmata: <strong>{{ $sampleTitle }}</strong>
     </p>
 
+    <p class="text-sm text-gray-500 mb-2">Laiks 1 vaicājuma izpildei:</p>
+
     <div class="grid grid-cols-2 gap-4 mb-6">
         <div class="bg-white rounded shadow p-4">
             <h2 class="text-lg font-semibold mb-2">Bez indeksa</h2>

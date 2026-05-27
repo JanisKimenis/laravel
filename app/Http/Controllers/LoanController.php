@@ -84,8 +84,9 @@ class LoanController extends Controller
 
     public function overdue(): View
     {
+        $rate = DB::table('settings')->where('key', 'fine_per_day')->value('value') ?? '0.50';
         $loans = DB::table('overdue_loans')->get();
 
-        return view('loans.overdue', compact('loans'));
+        return view('loans.overdue', compact('loans', 'rate'));
     }
 }

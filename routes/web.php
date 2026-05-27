@@ -16,6 +16,6 @@ Route::resource('loans', LoanController::class)->only(['index', 'create', 'store
 Route::patch('loans/{loan}/return', [LoanController::class, 'returnBook'])->name('loans.return');
 Route::get('loans/overdue', [LoanController::class, 'overdue'])->name('loans.overdue');
 Route::get('fines', [FineController::class, 'index'])->name('fines.index');
-Route::get('fines/calculate', [FineController::class, 'calculate'])->name('fines.calculate');
+Route::post('fines', [FineController::class, 'update'])->name('fines.update');
 Route::get('benchmark', [BenchmarkController::class, 'index'])->name('benchmark.index');
 Route::post('benchmark/run', [BenchmarkController::class, 'run'])->name('benchmark.run');
