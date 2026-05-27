@@ -15,6 +15,8 @@
             <a href="{{ route('loans.index') }}" class="hover:underline">Aizņēmumi</a>
             <a href="{{ route('loans.overdue') }}" class="hover:underline">Kavētie</a>
             <a href="{{ route('books.journal') }}" class="hover:underline">Žurnāls</a>
+            <a href="{{ route('fines.index') }}" class="hover:underline">Sodi</a>
+            <a href="{{ route('benchmark.index') }}" class="hover:underline">Benchmark</a>
         </div>
     </nav>
 
