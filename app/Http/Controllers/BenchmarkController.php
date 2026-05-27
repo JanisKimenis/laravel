@@ -15,14 +15,16 @@ class BenchmarkController extends Controller
         $explainBefore = null;
         $explainAfter = null;
         $usesIndex = false;
-        $matchCount = null;
+        $totalBooks = null;
+        $sampleTitle = null;
 
-        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'matchCount'));
+        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'totalBooks', 'sampleTitle'));
     }
 
     public function run(): View
     {
-        $matchCount = Book::where('title', 'LIKE', 'Booket%')->count();
+        $totalBooks = Book::count();
+        $sampleTitle = Book::where('title', 'LIKE', 'Booket%')->first()->title;
 
         // Drop index for "without" test
         try {
@@ -30,22 +32,21 @@ class BenchmarkController extends Controller
         } catch (\Exception $e) {
         }
 
-        $query = "SELECT * FROM books WHERE title >= 'Booket' AND title < 'Bookf'";
-
+        // === WITHOUT index ===
         $start = microtime(true);
-        DB::select($query);
+        DB::select('SELECT * FROM books WHERE title = ?', [$sampleTitle]);
         $withoutIndex = round((microtime(true) - $start) * 1000, 2);
 
-        $explainBefore = DB::select('EXPLAIN QUERY PLAN ' . $query);
+        $explainBefore = DB::select('EXPLAIN QUERY PLAN SELECT * FROM books WHERE title = ?', [$sampleTitle]);
 
-        // Create index and retest
+        // === WITH index ===
         DB::statement('CREATE INDEX IF NOT EXISTS books_title_index ON books(title)');
 
         $start = microtime(true);
-        DB::select($query);
+        DB::select('SELECT * FROM books WHERE title = ?', [$sampleTitle]);
         $withIndex = round((microtime(true) - $start) * 1000, 2);
 
-        $explainAfter = DB::select('EXPLAIN QUERY PLAN ' . $query);
+        $explainAfter = DB::select('EXPLAIN QUERY PLAN SELECT * FROM books WHERE title = ?', [$sampleTitle]);
 
         $usesIndex = false;
         foreach ($explainAfter as $row) {
@@ -55,6 +56,6 @@ class BenchmarkController extends Controller
             }
         }
 
-        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'matchCount'));
+        return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'totalBooks', 'sampleTitle'));
     }
 }

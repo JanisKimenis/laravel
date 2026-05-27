@@ -14,22 +14,27 @@
     </form>
 @else
     <p class="mb-4 text-gray-600">
-        Testa vaicājums: <code class="bg-gray-200 px-2 py-1 rounded">SELECT * FROM books WHERE title >= 'Booket' AND title &lt; 'Bookf'</code>
-        <br><span class="text-sm">(meklē visas grāmatas, kas sākas ar "Booket" — atrastas <strong>{{ number_format($matchCount) }}</strong> rindas)</span>
+        Testa vaicājums: <code class="bg-gray-200 px-2 py-1 rounded">SELECT * FROM books WHERE title = '...'</code>
+        <br>Tiek meklēta grāmata: <strong>{{ $sampleTitle }}</strong>
     </p>
 
     <div class="grid grid-cols-2 gap-4 mb-6">
         <div class="bg-white rounded shadow p-4">
             <h2 class="text-lg font-semibold mb-2">Bez indeksa</h2>
             <p class="text-3xl font-bold text-gray-600">{{ $withoutIndex }} <span class="text-base font-normal">ms</span></p>
-            <p class="text-xs text-gray-400">pilns tabulas skenējums</p>
+            <p class="text-xs text-gray-400">pilns tabulas skenējums (SCAN)</p>
         </div>
         <div class="bg-white rounded shadow p-4">
             <h2 class="text-lg font-semibold mb-2">Ar indeksu</h2>
             <p class="text-3xl font-bold text-green-600">{{ $withIndex }} <span class="text-base font-normal">ms</span></p>
             @if ($withoutIndex > 0)
                 <p class="text-sm text-gray-500">
-                    {{ round(($withoutIndex - $withIndex) / $withoutIndex * 100) }}% ātrāk
+                    @php $pct = round(($withoutIndex - $withIndex) / $withoutIndex * 100); @endphp
+                    @if ($pct > 0)
+                        {{ $pct }}% ātrāk
+                    @else
+                        {{ abs($pct) }}% lēnāk
+                    @endif
                 </p>
             @endif
         </div>
@@ -57,12 +62,18 @@
 
     <div class="{{ $usesIndex ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700' }} border px-4 py-3 rounded mb-4">
         @if ($usesIndex)
-            ✅ Datubāze izmanto indeksu <strong>books_title_index</strong> — netiek skenēta visa tabula.
+            ✅ Datubāze izmanto indeksu <strong>books_title_index</strong> — indeksā atrod rindu uzreiz bez tabulas skenēšanas.
         @else
             ❌ Indekss netiek izmantots.
         @endif
     </div>
 
-    <a href="{{ route('benchmark.index') }}" class="text-blue-600 hover:underline">Testēt vēlreiz</a>
+    <p class="text-sm text-gray-500 mt-4">
+        <strong>Piezīme:</strong> Indekss palīdz tikai tad, ja vaicājums atrod nelielu daļu no rindām (augsta selektivitāte).
+        Diapazona vaicājums (<code>title >= 'A' AND title < 'B'</code>), kas atrod 94% tabulas, ir ātrāks bez indeksa,
+        jo indeksa koka pārlūkošana + rindu atlase no tabulas ir lēnāka nekā secīgs skenējums.
+    </p>
+
+    <a href="{{ route('benchmark.index') }}" class="text-blue-600 hover:underline mt-4 inline-block">Testēt vēlreiz</a>
 @endif
 @endsection
