@@ -10,7 +10,7 @@ class Journal extends Model
 
     public $timestamps = false;
 
-    public function book()
+    public function book(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Book::class);
     }

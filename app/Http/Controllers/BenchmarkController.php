@@ -22,50 +22,36 @@ class BenchmarkController extends Controller
 
     public function run(): View
     {
+        $sampleTitle = Book::first()?->title ?? 'test';
         $driver = DB::connection()->getDriverName();
-        $sampleTitle = Book::first()->title;
-
-        try {
-            DB::statement('DROP INDEX IF EXISTS books_title_index');
-        } catch (\Exception $e) {
-        }
 
         // === WITHOUT index ===
+        DB::statement('DROP INDEX IF EXISTS books_title_index');
+
         $start = microtime(true);
-        DB::select('SELECT * FROM books WHERE title = ?', [$sampleTitle]);
+        Book::where('title', $sampleTitle)->first();
         $withoutIndex = round((microtime(true) - $start) * 1000, 2);
 
-        $explainBefore = $this->runExplain($sampleTitle);
+        $explainBefore = $driver === 'pgsql'
+            ? DB::select("EXPLAIN (FORMAT JSON) SELECT * FROM books WHERE title = ?", [$sampleTitle])
+            : DB::select('EXPLAIN QUERY PLAN SELECT * FROM books WHERE title = ?', [$sampleTitle]);
 
         // === WITH index ===
-        DB::statement('CREATE INDEX IF NOT EXISTS books_title_index ON books(title)');
+        DB::statement('CREATE INDEX IF NOT EXISTS books_title_index ON books (title)');
 
         $start = microtime(true);
-        DB::select('SELECT * FROM books WHERE title = ?', [$sampleTitle]);
+        Book::where('title', $sampleTitle)->first();
         $withIndex = round((microtime(true) - $start) * 1000, 2);
 
-        $explainAfter = $this->runExplain($sampleTitle);
+        $explainAfter = $driver === 'pgsql'
+            ? DB::select("EXPLAIN (FORMAT JSON) SELECT * FROM books WHERE title = ?", [$sampleTitle])
+            : DB::select('EXPLAIN QUERY PLAN SELECT * FROM books WHERE title = ?', [$sampleTitle]);
 
-        $usesIndex = false;
-        foreach ($explainAfter as $row) {
-            foreach ((array) $row as $col) {
-                if (str_contains((string) $col, 'books_title_index') || str_contains((string) $col, 'Index Scan')) {
-                    $usesIndex = true;
-                    break 2;
-                }
-            }
-        }
+        $planJson = json_encode($explainAfter);
+        $usesIndex = str_contains($planJson, 'Index Scan')
+            || str_contains($planJson, 'Index Only Scan')
+            || str_contains($planJson, 'books_title_index');
 
         return view('benchmark.index', compact('withoutIndex', 'withIndex', 'explainBefore', 'explainAfter', 'usesIndex', 'sampleTitle'));
-    }
-
-    private function runExplain(string $title): array
-    {
-        $driver = DB::connection()->getDriverName();
-        $rows = $driver === 'sqlite'
-            ? DB::select('EXPLAIN QUERY PLAN SELECT * FROM books WHERE title = ?', [$title])
-            : DB::select('EXPLAIN (FORMAT TEXT) SELECT * FROM books WHERE title = ?', [$title]);
-
-        return array_map(fn ($r) => (object) ['detail' => join(' ', array_values((array) $r))], $rows);
     }
 }

@@ -11,8 +11,13 @@ class Reader extends Model
 
     protected $fillable = ['name', 'email'];
 
-    public function loans()
+    public function loans(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Loan::class);
+    }
+
+    public function comments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable');
     }
 }

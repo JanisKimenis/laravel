@@ -14,7 +14,7 @@
     </form>
 @else
     <p class="mb-4 text-gray-600">
-        Testa vaicājums: <code class="bg-gray-200 px-2 py-1 rounded">SELECT * FROM books WHERE title = '...'</code>
+        Testa vaicājums: <code class="bg-gray-200 px-2 py-1 rounded">Book::where('title', '...')->first()</code>
         <br>Tiek meklēta grāmata: <strong>{{ $sampleTitle }}</strong>
     </p>
 
@@ -24,7 +24,7 @@
         <div class="bg-white rounded shadow p-4">
             <h2 class="text-lg font-semibold mb-2">Bez indeksa</h2>
             <p class="text-3xl font-bold text-gray-600">{{ $withoutIndex }} <span class="text-base font-normal">ms</span></p>
-            <p class="text-xs text-gray-400">pilns tabulas skenējums (SCAN)</p>
+            <p class="text-xs text-gray-400">pilns kolekcijas skenējums (COLLSCAN)</p>
         </div>
         <div class="bg-white rounded shadow p-4">
             <h2 class="text-lg font-semibold mb-2">Ar indeksu</h2>
@@ -46,8 +46,9 @@
     <table class="w-full bg-white rounded shadow mb-4">
         <thead class="bg-gray-200"><tr><th class="p-2 text-left">Detāļas</th></tr></thead>
         <tbody>
-            @foreach ($explainBefore as $row)
-            <tr class="border-t"><td class="p-2 text-red-700">{{ $row->detail }}</td></tr>
+            @foreach ($explainBefore ?? [] as $row)
+            @php $content = is_string($row->{'QUERY PLAN'} ?? null) ? $row->{'QUERY PLAN'} : json_encode($row); @endphp
+            <tr class="border-t"><td class="p-2 text-red-700 font-mono text-sm">{{ $content }}</td></tr>
             @endforeach
         </tbody>
     </table>
@@ -56,24 +57,23 @@
     <table class="w-full bg-white rounded shadow mb-4">
         <thead class="bg-gray-200"><tr><th class="p-2 text-left">Detāļas</th></tr></thead>
         <tbody>
-            @foreach ($explainAfter as $row)
-            <tr class="border-t"><td class="p-2 text-green-700">{{ $row->detail }}</td></tr>
+            @foreach ($explainAfter ?? [] as $row)
+            @php $content = is_string($row->{'QUERY PLAN'} ?? null) ? $row->{'QUERY PLAN'} : json_encode($row); @endphp
+            <tr class="border-t"><td class="p-2 text-green-700 font-mono text-sm">{{ $content }}</td></tr>
             @endforeach
         </tbody>
     </table>
 
     <div class="{{ $usesIndex ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700' }} border px-4 py-3 rounded mb-4">
         @if ($usesIndex)
-            ✅ Datubāze izmanto indeksu <strong>books_title_index</strong> — indeksā atrod rindu uzreiz bez tabulas skenēšanas.
+            ✅ MongoDB izmanto indeksu — indeksā atrod dokumentu uzreiz bez kolekcijas skenēšanas.
         @else
             ❌ Indekss netiek izmantots.
         @endif
     </div>
 
     <p class="text-sm text-gray-500 mt-4">
-        <strong>Piezīme:</strong> Indekss palīdz tikai tad, ja vaicājums atrod nelielu daļu no rindām (augsta selektivitāte).
-        Diapazona vaicājums (<code>title >= 'A' AND title < 'B'</code>), kas atrod 94% tabulas, ir ātrāks bez indeksa,
-        jo indeksa koka pārlūkošana + rindu atlase no tabulas ir lēnāka nekā secīgs skenējums.
+        <strong>Piezīme:</strong> Indekss palīdz tikai tad, ja vaicājums atrod nelielu daļu no dokumentiem (augsta selektivitāte).
     </p>
 
     <a href="{{ route('benchmark.index') }}" class="text-blue-600 hover:underline mt-4 inline-block">Testēt vēlreiz</a>

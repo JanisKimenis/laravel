@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/books');
 
 Route::get('books/journal', [BookController::class, 'journal'])->name('books.journal');
+Route::post('books/{book}/copy', [BookController::class, 'copy'])->name('books.copy');
 Route::resource('books', BookController::class);
 Route::resource('readers', ReaderController::class);
 Route::resource('loans', LoanController::class)->only(['index', 'create', 'store']);

@@ -19,13 +19,19 @@ class Loan extends Model
         ];
     }
 
-    public function book()
+    public function book(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Book::class);
     }
 
-    public function reader()
+    public function reader(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Reader::class);
+    }
+
+    public function scopeOverdue($query)
+    {
+        return $query->whereNull('returned_at')
+            ->where('borrowed_at', '<', now()->subDays(14));
     }
 }

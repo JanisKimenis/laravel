@@ -11,7 +11,7 @@ class ReaderController extends Controller
 {
     public function index(): View
     {
-        $readers = Reader::latest()->paginate(10);
+        $readers = Reader::orderBy('created_at', 'desc')->paginate(10);
         return view('readers.index', compact('readers'));
     }
 
@@ -41,7 +41,7 @@ class ReaderController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:readers,email,' . $reader->id,
+            'email' => 'required|email|max:255|unique:readers,email,' . $reader->id . ',id',
         ]);
 
         $reader->update($validated);
